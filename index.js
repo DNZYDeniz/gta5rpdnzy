@@ -46,9 +46,9 @@ const MICHAEL_INT_POS = new mp.Vector3(-802.3, 175.0, 72.8);
 // CAMERA TUNING (BURADAN AYARLA)
 // ------------------------------
 const CAM_TUNE = {
-  body: { dist: 2.20, camH: 0.40, lookH: 0.22, fov: 36 },
-  head: { dist: 0.95, camH: 0.52, lookH: 0.68, fov: 28 },
-  feet: { dist: 1.25, camH: 0.16, lookH: -0.70, fov: 26 },
+  body: { dist: 2.20, camH: 0.40, lookH: 0.22, fov: 36, side: 0.00 },
+  head: { dist: 0.95, camH: 0.52, lookH: 0.68, fov: 28, side: 0.00 },
+  feet: { dist: 1.25, camH: 0.16, lookH: -0.70, fov: 26, side: 0.00 },
 };
 
 let currentCamMode = "body"; // "body" | "head" | "feet"
@@ -366,7 +366,7 @@ function applyFrontCamera(mode) {
   const t = CAM_TUNE[mode] || CAM_TUNE.body;
   const p = localPlayer.position;
 
-  const camPos = new mp.Vector3(p.x, p.y - t.dist, p.z + t.camH);
+  const camPos = new mp.Vector3(p.x + (t.side || 0), p.y - t.dist, p.z + t.camH);
   const lookPos = new mp.Vector3(p.x, p.y, p.z + t.lookH);
 
   createOrUpdateCam(camPos, lookPos, t.fov);
@@ -394,15 +394,29 @@ function updateCamLookToPlayer() {
 
 function applyDefaultClothesForGender() {
   const isMale = (currentGender === "ERKEK");
+  applyUnderwearBase(isMale);
+}
 
-  const topId = isMale ? maleTops[0] : femaleTops[0];
-  const legId = isMale ? maleLegs[0] : femaleLegs[0];
-  const shoeId = isMale ? maleShoes[0] : femaleShoes[0];
 
-  localPlayer.setComponentVariation(11, topId, 0, 0);
-  localPlayer.setComponentVariation(4, legId, 0, 0);
-  localPlayer.setComponentVariation(6, shoeId, 0, 0);
-  localPlayer.setComponentVariation(8, 15, 0, 0);
+function cycleIndexWithNone(raw, len) {
+  const n = parseInt(raw);
+  const L = Math.max(0, len | 0);
+  if (!Number.isFinite(n) || L === 0) return 0;
+  const mod = (L + 1);
+  return ((n % mod) + mod) % mod; // 0..L
+}
+
+function applyUnderwearBase(isMale) {
+  // GTA: SET_PED_DEFAULT_COMPONENT_VARIATION -> freemode ped'de underwear default verir
+  try { mp.game.invoke("0x45EEE61580806D63", localPlayer.handle); } catch (e) {}
+
+  // Bazı buildlerde ekstra güvenlik:
+  try { localPlayer.clearProp(0); } catch(e) {}
+  try { localPlayer.clearProp(1); } catch(e) {}
+  try { localPlayer.clearProp(2); } catch(e) {}
+
+  // Üst/alt "none" gibi davranması için gerekirse undershirt sabitle
+  try { localPlayer.setComponentVariation(8, 15, 0, 0); } catch (e) {}
 }
 
 // --------------------------------------------------
@@ -520,16 +534,23 @@ mp.events.add("client:character:startCreator", () => {
     applyDefaultClothesForGender();
 
     currentCamMode = "body";
-    applyFrontCamera(currentCamMode);
-    setTimeout(() => facePlayerToCamera(), 0);
-    setTimeout(() => facePlayerToCamera(), 150);
+    try { applyFrontCamera(currentCamMode); } catch (e) {}
+    setTimeout(() => { try { facePlayerToCamera(); } catch (e) {} }, 0);
+    setTimeout(() => { try { facePlayerToCamera(); } catch (e) {} }, 150);
 
     if (!charBrowser) {
       charBrowser = mp.browsers.new("package://character/ui/index.html");
     }
-  }, 350);
-});
 
+    // ✅ UI load sonrası ilk kamerayı BODY'ye kilitle
+    setTimeout(() => {
+      try { currentCamMode = "body"; } catch (e) {}
+      try { applyFrontCamera("body"); } catch (e) {}
+      try { facePlayerToCamera(); } catch (e) {}
+    }, 450);
+
+  }, 0);
+});
 // --------------------------------------------------
 // UI -> CLIENT EVENTS
 // --------------------------------------------------
@@ -540,36 +561,69 @@ mp.events.add("client:char:setGender", (g) => {
   const isMale = (g === "ERKEK");
   const model = isMale ? "mp_m_freemode_01" : "mp_f_freemode_01";
 
+  // Server-side model swap
   mp.events.callRemote("server:character:changeModel", model);
 
+  // UI'ya yansıt
   if (charBrowser) {
     charBrowser.execute(`window.__setGender && window.__setGender(${isMale ? `"ERKEK"` : `"KADIN"`});`);
   }
 
+  // Model swap biraz gecikmeli oturuyor -> 2 aşamalı düzeltme
   setTimeout(() => {
-    if (!isMale) {
-      localPlayer.setHeadBlendData(45, 34, 0, 45, 34, 0, 0.5, 0.5, 0, false);
-      localPlayer.setComponentVariation(2, 15, 0, 0);
-      localPlayer.setHairColor(0, 0);
+    try {
+      // ✅ Modelin yüzü kameraya baksın diye heading'i sabitle
+      // (Kamera Y eksenine bakıyor: genelde 180 doğru)
+      localPlayer.setHeading(180);
+    } catch (e) {}
 
-      currentBeard = 0;
-      currentBeardColor = 0;
-      localPlayer.setHeadOverlay(1, 0, 0.0, 0, 0);
-    } else {
-      localPlayer.setHeadBlendData(0, 0, 0, 0, 0, 0, 0.5, 0.5, 0, false);
-      localPlayer.setComponentVariation(2, 0, 0, 0);
-      localPlayer.setHairColor(0, 0);
+    try {
+      if (!isMale) {
+        // KADIN default
+        localPlayer.setHeadBlendData(45, 34, 0, 45, 34, 0, 0.5, 0.5, 0, false);
+        localPlayer.setComponentVariation(2, 15, 0, 0); // saç
+        localPlayer.setHairColor(0, 0);
 
-      currentBeard = 0;
-      currentBeardColor = 0;
-      localPlayer.setHeadOverlay(1, 0, 1.0, 0, 0);
-    }
+        currentBeard = 0;
+        currentBeardColor = 0;
+        localPlayer.setHeadOverlay(1, 0, 0.0, 0, 0); // sakal yok
+      } else {
+        // ERKEK default
+        localPlayer.setHeadBlendData(0, 0, 0, 0, 0, 0, 0.5, 0.5, 0, false);
+        localPlayer.setComponentVariation(2, 0, 0, 0);
+        localPlayer.setHairColor(0, 0);
 
+        currentBeard = 0;
+        currentBeardColor = 0;
+        localPlayer.setHeadOverlay(1, 0, 1.0, 0, 0); // sakal overlay (senin eski mantık)
+      }
+    } catch (e) {}
+
+    // ✅ Default kıyafet yerine underwear (sen applyDefaultClothesForGender'i buna çevirmiş olacaksın)
     applyDefaultClothesForGender();
-    facePlayerToCamera();
-    setTimeout(() => facePlayerToCamera(), 150);
+
+    // ✅ Kamera modunu BODY'ye sabitle (ilk kamera vücut gibi olsun)
+    currentCamMode = "body";
+    try { applyFrontCamera("body"); } catch (e) {}
+
+    // ✅ Yön düzelt
+    try { facePlayerToCamera(); } catch (e) {}
+    setTimeout(() => {
+      try { localPlayer.setHeading(180); } catch (e) {}
+      try { applyFrontCamera("body"); } catch (e) {}
+      try { facePlayerToCamera(); } catch (e) {}
+    }, 200);
+
+    // ✅ Bir kez daha (model swap bazen 500-700ms'de tam oturuyor)
+    setTimeout(() => {
+      try { localPlayer.setHeading(180); } catch (e) {}
+      try { applyFrontCamera("body"); } catch (e) {}
+      try { facePlayerToCamera(); } catch (e) {}
+    }, 650);
+
   }, 250);
 });
+
 
 mp.events.add("client:char:setHeritage", (m, d, s) => {
   localPlayer.setHeadBlendData(
@@ -685,31 +739,47 @@ mp.events.add("client:char:updateFeature", (type, value) => {
     // CLOTHES (list üzerinden)
     // ----------------------------
     case "top": {
-      const idx = Math.max(0, parseInt(raw) || 0);
       const arr = isMale ? maleTops : femaleTops;
-      const tId = arr[idx % arr.length];
+      const c = cycleIndexWithNone(raw, arr.length);
+
+      if (c === 0) {
+        applyUnderwearBase(isMale);
+        break;
+      }
+
+      const tId = arr[c - 1];
       try { localPlayer.setComponentVariation(11, tId, 0, 0); } catch (e) {}
       try { localPlayer.setComponentVariation(8, 15, 0, 0); } catch (e) {}
       break;
     }
 
     case "legs": {
-      const idx = Math.max(0, parseInt(raw) || 0);
       const arr = isMale ? maleLegs : femaleLegs;
-      const lId = arr[idx % arr.length];
+      const c = cycleIndexWithNone(raw, arr.length);
+
+      if (c === 0) {
+        applyUnderwearBase(isMale);
+        break;
+      }
+
+      const lId = arr[c - 1];
       try { localPlayer.setComponentVariation(4, lId, 0, 0); } catch (e) {}
       break;
     }
 
     case "shoes": {
-      const idx = Math.max(0, parseInt(raw) || 0);
       const arr = isMale ? maleShoes : femaleShoes;
-      const sId = arr[idx % arr.length];
+      const c = cycleIndexWithNone(raw, arr.length);
+
+      if (c === 0) {
+        applyUnderwearBase(isMale);
+        break;
+      }
+
+      const sId = arr[c - 1];
       try { localPlayer.setComponentVariation(6, sId, 0, 0); } catch (e) {}
       break;
     }
-  }
-});
 
 
 mp.events.add("client:char:setCamera", (t) => {
