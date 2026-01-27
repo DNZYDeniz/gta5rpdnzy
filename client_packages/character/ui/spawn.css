@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700;900&display=swap');
+
+body {
+    margin: 0; padding: 0;
+    font-family: 'Oswald', sans-serif; /* Karakter ekranıyla uyum için */
+    background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%);
+    display: flex; 
+    flex-direction: column; /* İçeriği dikeyde hizalamak için */
+    justify-content: center; 
+    align-items: center;
+    height: 100vh; 
+    overflow: hidden; 
+    color: white;
+}
+
+.main-header {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 3rem;
+    font-weight: 900;
+    text-shadow: 0 0 20px rgba(0,0,0,0.9);
+    letter-spacing: 2px;
+}
+
+.spawn-container {
+    display: flex; 
+    gap: 25px;
+}
+
+.spawn-card {
+    width: 260px; 
+    height: 500px;
+    background: rgba(10, 12, 18, 0.98);
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.spawn-card:hover:not(.locked) {
+    transform: translateY(-15px);
+    border-color: #ffd54a;
+    box-shadow: 0 15px 35px rgba(255, 213, 74, 0.15);
+}
+
+.spawn-card.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+/* RESİM VE BAŞLIK ALANI */
+.image-box {
+    position: relative;
+    width: 100%; 
+    height: 80%;
+}
+
+.image-box img {
+    width: 100%; 
+    height: 100%;
+    object-fit: cover;
+    transition: 0.5s ease;
+}
+
+.spawn-card:hover:not(.locked) .image-box img {
+    transform: scale(1.1);
+}
+
+/* KARTIN ÜZERİNDEKİ BÜYÜK SARI YAZILAR */
+.card-title {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #ffd54a; /* İstediğin sarı tonu */
+    text-transform: uppercase;
+    text-shadow: 2px 2px 10px rgba(0,0,0,1), 0 0 15px rgba(0,0,0,0.8);
+    pointer-events: none;
+    letter-spacing: 2px;
+}
+
+.info {
+    padding: 15px; 
+    text-align: center;
+    height: 20%; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center;
+    background: rgba(0,0,0,0.3);
+}
+
+.status {
+    padding: 6px 15px; 
+    background: #ff4a4a; 
+    border-radius: 5px; 
+    font-size: 12px; 
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.status.active {
+    background: #4aff4a; 
+    color: black;
+}
+
+/* ALT TAVSİYE BİLGİ KUTUSU */
+.info-box {
+    margin-top: 50px;
+    padding: 20px 40px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid #ffd54a;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 850px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    animation: fadeIn 1s ease;
+}
+
+.info-box p {
+    margin: 5px 0;
+    font-size: 1.4rem;
+    color: #fff;
+    font-weight: 400;
+}
+
+.info-box p span {
+    color: #ffd54a;
+    font-weight: 900;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 213, 74, 0.4);
+}
+
+.info-box .small {
+    font-size: 1rem;
+    color: #aaa;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

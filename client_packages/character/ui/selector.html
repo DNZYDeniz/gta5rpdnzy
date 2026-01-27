@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;500;900&display=swap');
+        
+        body {
+            margin: 0; padding: 0;
+            user-select: none;
+            overflow: hidden;
+            font-family: 'Oswald', sans-serif;
+            background: transparent; 
+        }
+
+        /* SAĞ PANEL */
+        .stats-panel {
+            position: absolute;
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 400px;
+            background: rgba(10, 12, 18, 0.95);
+            border-left: 5px solid #ffd54a;
+            border-radius: 15px;
+            padding: 30px;
+            color: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            /* ARTIK GİZLEMİYORUZ, HEP GÖRÜNÜR */
+            animation: slideIn 0.8s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translate(50px, -50%); }
+            to { opacity: 1; transform: translate(0, -50%); }
+        }
+
+        .char-header {
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+        }
+
+        .char-name {
+            font-size: 42px;
+            font-weight: 900;
+            color: #ffd54a;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .char-id-badge {
+            display: inline-block;
+            background: #222;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #444;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.3s;
+        }
+        .stat-row:hover { background: rgba(255,255,255,0.1); border-color: #ffd54a; }
+
+        .stat-label { font-size: 14px; color: #aaa; text-transform: uppercase; font-weight: 500; }
+        .stat-value { font-size: 24px; font-weight: 900; color: white; }
+        .money-val { color: #2ecc71; }
+        .time-val { color: #3498db; }
+
+        .play-btn {
+            margin-top: 20px;
+            background: linear-gradient(45deg, #ffd54a, #e6b800);
+            border: none;
+            padding: 20px;
+            font-size: 32px;
+            font-weight: 900;
+            color: #000;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 10px 30px rgba(255, 213, 74, 0.3);
+            transition: all 0.3s ease;
+        }
+        .play-btn:hover { transform: scale(1.02); box-shadow: 0 15px 50px rgba(255, 213, 74, 0.5); }
+    </style>
+</head>
+<body>
+
+    <div id="mainPanel" class="stats-panel">
+        <div class="char-header">
+            <div class="char-name" id="c-name">YÜKLENİYOR...</div>
+            <div class="char-id-badge">ID: <span id="c-id">...</span></div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Nakit Para</span>
+            <span class="stat-value money-val" id="c-money">...</span>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Sunucuda Geçen Süre</span>
+            <span class="stat-value time-val" id="c-days">...</span>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Haftalık Oynama</span>
+            <span class="stat-value" id="c-hours">...</span>
+        </div>
+
+        <button class="play-btn" onclick="playGame()">OYNA</button>
+    </div>
+
+    <script>
+        function setInfo(jsonStr) {
+            try {
+                if(!jsonStr) return;
+                const data = JSON.parse(jsonStr);
+                
+                document.getElementById('c-name').innerText = data.name || "İsimsiz";
+                document.getElementById('c-id').innerText = data.charId || "0";
+                
+                let money = data.money || 0;
+                document.getElementById('c-money').innerText = '$' + new Intl.NumberFormat('en-US').format(money);
+                
+                document.getElementById('c-days').innerText = (data.days || 0) + " GÜN";
+                document.getElementById('c-hours').innerText = (data.hours || 0) + " SAAT";
+
+            } catch (e) {
+                console.log("Selector UI Hata: " + e);
+                document.getElementById('c-name').innerText = "Veri Hatası";
+            }
+        }
+
+        function playGame() {
+            if('mp' in window) {
+                mp.trigger('client:selector:play');
+            }
+        }
+    </script>
+</body>
+</html>

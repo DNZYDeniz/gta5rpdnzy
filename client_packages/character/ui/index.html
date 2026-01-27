@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700;900&display=swap');
+        body { font-family: 'Oswald', sans-serif; user-select: none; overflow: hidden; color: white; margin: 0; }
+        
+        /* SOL PANEL */
+        .left-panel {
+            position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
+            width: 320px; background: rgba(0, 0, 0, 0.95); padding: 25px;
+            border-radius: 12px; border-left: 6px solid #ff9d00; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+        }
+
+        /* SAĞ PANEL */
+        .right-panel {
+            position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+            width: 380px; height: 75vh; background: rgba(0, 0, 0, 0.95); padding: 25px;
+            border-radius: 12px; border-right: 6px solid #ff9d00; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            display: flex; flex-direction: column;
+        }
+
+        .banner-box {
+            width: 100%; height: 80px; background-size: cover; background-position: center;
+            border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; background-color: #111;
+        }
+
+        .header { font-size: 26px; font-weight: 900; color: #ff9d00; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; letter-spacing: 1px; }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; color: #ccc; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        input[type="text"] {
+            width: 100%; background: #181818; border: 2px solid #333; padding: 12px;
+            color: white; font-size: 20px; font-weight: 900; border-radius: 6px; box-sizing: border-box;
+        }
+        input:focus { border-color: #ff9d00; outline: none; background: #222; }
+
+        .gender-container { display: flex; gap: 10px; margin: 15px 0; }
+        .gender-btn { 
+            flex: 1; padding: 15px; border: 2px solid #333; background: #111; color: #666; 
+            font-weight: 900; cursor: pointer; border-radius: 6px; transition: 0.3s;
+        }
+        .gender-btn.active { background: #ff9d00; color: black; border-color: #ff9d00; }
+
+        /* SLIDER & SEÇİCİLER */
+        input[type="range"] { width: 100%; height: 6px; background: #333; accent-color: #ff9d00; cursor: pointer; margin-bottom: 10px; border-radius: 4px; }
+
+        .selector {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #181818; margin-top: 10px; padding: 10px 15px; border-radius: 8px; border: 1px solid #252525;
+        }
+        .btn-arrow { 
+            background: #ff9d00; color: black; border: none; width: 35px; height: 30px; 
+            cursor: pointer; font-weight: 900; border-radius: 4px; font-size: 18px; 
+        }
+        .btn-arrow:hover { background: white; }
+        .val-display { color: #ff9d00; font-size: 18px; font-weight: bold; }
+
+        .menu-btn {
+            width: 100%; background: #444; color: white; border: none; padding: 15px;
+            font-weight: 900; cursor: pointer; border-radius: 8px; margin-top: 20px; font-size: 16px; transition: 0.3s;
+        }
+        .menu-btn:hover { background: #ff9d00; color: black; }
+
+        #finish-btn {
+            position: fixed; right: 40px; bottom: 30px; width: 380px;
+            background: linear-gradient(45deg, #28a745, #218838); color: white; border: none; 
+            padding: 20px; font-size: 24px; font-weight: 900; cursor: pointer; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(40,167,69,0.5); text-transform: uppercase; letter-spacing: 1px;
+            z-index: 100; transition: 0.3s;
+        }
+        #finish-btn:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(40,167,69,0.7); }
+
+        .cam-menu { 
+            position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); 
+            display: flex; gap: 20px; z-index: 100;
+        }
+        .cam-item {
+            background: rgba(0,0,0,0.9); border: 2px solid #555; color: white;
+            width: 120px; padding: 15px 0; border-radius: 30px; cursor: pointer; 
+            font-weight: 900; font-size: 14px; text-align: center; transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .cam-item:hover { border-color: #ff9d00; color: #ff9d00; background: black; transform: translateY(-5px); }
+
+        #main-style-menu, #face-menu { display: block; overflow-y: auto; height: 100%; padding-right: 5px; scrollbar-width: thin; }
+        #face-menu { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="left-panel">
+    <div class="banner-box" style="background-image: url('banner2.png');"></div>
+    <div class="header">KİMLİK KARTI</div>
+    <div class="input-group">
+        <label>İSİM (NAME)</label>
+        <input type="text" id="c-name" maxlength="12" placeholder="John" onkeydown="stopProp(event)">
+    </div>
+    <div class="input-group">
+        <label>SOYİSİM (SURNAME)</label>
+        <input type="text" id="c-surname" maxlength="12" placeholder="Doe" onkeydown="stopProp(event)">
+    </div>
+    <label>CİNSİYET</label>
+    <div class="gender-container">
+        <button id="m-btn" class="gender-btn active" onclick="setGender('ERKEK')">ERKEK</button>
+        <button id="f-btn" class="gender-btn" onclick="setGender('KADIN')">KADIN</button>
+    </div>
+    <label>YAŞ: <span id="age-val" style="color:#ff9d00">25</span></label>
+    <input type="range" min="18" max="60" value="25" oninput="updateAge(this.value)">
+
+    <div style="margin-top:20px; border-top:1px dashed #444; padding-top:10px;">
+        <label>ANNE: <span id="mom-val">0</span></label>
+        <input type="range" min="0" max="45" value="0" oninput="updateHeritage('mom', this.value)">
+        <label>BABA: <span id="dad-val">0</span></label>
+        <input type="range" min="0" max="45" value="0" oninput="updateHeritage('dad', this.value)">
+        <label>TEN RENGİ: <span id="skin-val">0</span></label>
+        <input type="range" min="0" max="10" value="0" oninput="updateHeritage('skin', this.value)">
+    </div>
+</div>
+
+<div class="right-panel">
+    <div class="banner-box" style="background-image: url('banner.png');"></div>
+
+    <div id="main-style-menu">
+        <div class="header">STİL & GÖRÜNÜM</div>
+        
+        <div class="selector">
+            <span>SAÇ MODELİ (0-80)</span>
+            <div><button class="btn-arrow" onclick="updStyle('hair', -1)"><</button> <span id="hair-id" class="val-display">0</span> <button class="btn-arrow" onclick="updStyle('hair', 1)">></button></div>
+        </div>
+        
+        <div style="margin-top:10px;">
+            <label>SAÇ RENGİ (0-63)</label>
+            <input type="range" min="0" max="63" value="0" oninput="setDirectStyle('hair_color', this.value)">
+        </div>
+
+       <div id="rowBeard" class="selector">
+    <span>SAKAL MODELİ</span>
+    <div><button class="btn-arrow" onclick="updStyle('beard', -1)"><</button> <span id="beard-id" class="val-display">0</span> <button class="btn-arrow" onclick="updStyle('beard', 1)">></button></div>
+</div>
+
+<div id="rowBeardClr" style="margin-top:10px;">
+    <label>SAKAL RENGİ (0-63)</label>
+    <input id="beard-color-range" type="range" min="0" max="63" value="0" oninput="setDirectStyle('beard_color', this.value)">
+</div>
+
+<div id="rowBrow" class="selector">
+  <span>KAŞ MODELİ</span>
+  <div>
+    <button class="btn-arrow" onclick="updStyle('brows', -1)"><</button>
+    <span id="brows-id" class="val-display">0</span>
+    <button class="btn-arrow" onclick="updStyle('brows', 1)">></button>
+  </div>
+</div>
+
+<div id="rowBrowClr" style="margin-top:10px;">
+  <label>KAŞ RENGİ (0-63)</label>
+  <input id="brows-color-range" type="range" min="0" max="63" value="0"
+         oninput="setDirectStyle('brows_color', this.value)">
+</div>
+
+        <div class="selector">
+            <span>ÜST KIYAFET</span>
+            <div><button class="btn-arrow" onclick="updStyle('top', -1)"><</button> <span id="top-id" class="val-display">0</span> <button class="btn-arrow" onclick="updStyle('top', 1)">></button></div>
+        </div>
+        <div class="selector">
+            <span>PANTOLON</span>
+            <div><button class="btn-arrow" onclick="updStyle('legs', -1)"><</button> <span id="legs-id" class="val-display">0</span> <button class="btn-arrow" onclick="updStyle('legs', 1)">></button></div>
+        </div>
+        <div class="selector">
+            <span>AYAKKABI</span>
+            <div><button class="btn-arrow" onclick="updStyle('shoes', -1)"><</button> <span id="shoes-id" class="val-display">0</span> <button class="btn-arrow" onclick="updStyle('shoes', 1)">></button></div>
+        </div>
+
+        <button class="menu-btn" onclick="openFaceMenu()">YÜZ DETAYLARINI DÜZENLE</button>
+    </div>
+
+    <div id="face-menu">
+        <div class="header">YÜZ DETAYLARI</div>
+        
+        <div class="selector">
+            <span>GÖZ RENGİ</span>
+            <div><button class="btn-arrow" onclick="updStyle('eyes', -1)"><</button> <span id="eyes-id" class="val-display">0</span> <button class="btn-arrow" onclick="updStyle('eyes', 1)">></button></div>
+        </div>
+		
+		<div class="selector">
+  <span>EYELINER</span>
+  <div>
+    <button class="btn-arrow" onclick="updStyle('eyeliner', -1)"><</button>
+    <span id="eyeliner-id" class="val-display">0</span>
+    <button class="btn-arrow" onclick="updStyle('eyeliner', 1)">></button>
+  </div>
+</div>
+
+<div style="margin-top:10px;">
+  <label>EYELINER RENGİ (0-63)</label>
+  <input id="eyeliner-color" type="range" min="0" max="63" value="0"
+         oninput="setDirectStyle('eyeliner_color', this.value)">
+</div>
+
+<div class="selector" style="margin-top:10px;">
+  <span>EYESHADOW (GÖZ FARI)</span>
+  <div>
+    <button class="btn-arrow" onclick="updStyle('eyeshadow', -1)"><</button>
+    <span id="eyeshadow-id" class="val-display">0</span>
+    <button class="btn-arrow" onclick="updStyle('eyeshadow', 1)">></button>
+  </div>
+</div>
+
+<div style="margin-top:10px;">
+  <label>FAR RENGİ (0-63)</label>
+  <input id="eyeshadow-color" type="range" min="0" max="63" value="0"
+         oninput="setDirectStyle('eyeshadow_color', this.value)">
+</div>
+
+        <div style="padding:10px 0;">
+            <label>BURUN GENİŞLİĞİ</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(0, this.value)">
+            <label>BURUN YÜKSEKLİĞİ</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(1, this.value)">
+            <label>BURUN UZUNLUĞU</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(2, this.value)">
+            <label>KAŞ YÜKSEKLİĞİ</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(6, this.value)">
+            <label>ELMACIK KEMİKLERİ</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(8, this.value)">
+            <label>YANAK ŞİŞKİNLİĞİ</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(9, this.value)">
+            <label>DUDAK KALINLIĞI</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(12, this.value)">
+            <label>ÇENE GENİŞLİĞİ</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(13, this.value)">
+            <label>ÇENE UZUNLUĞU</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(15, this.value)">
+            <label>BOYUN KALINLIĞI</label><input type="range" min="-1" max="1" step="0.1" oninput="updFace(19, this.value)">
+        </div>
+
+        <button class="menu-btn" style="background:#8b0000;" onclick="closeFaceMenu()">GERİ DÖN</button>
+    </div>
+</div>
+
+<div class="cam-menu">
+    <div class="cam-item" onclick="setCam('head')">YÜZ ODAK</div>
+    <div class="cam-item" onclick="setCam('body')">VÜCUT ODAK</div>
+    <div class="cam-item" onclick="setCam('feet')">AYAK ODAK</div>
+</div>
+
+<button id="finish-btn" onclick="finish()">KARAKTERİ OLUŞTUR</button>
+
+<script>
+    let gender = "ERKEK";
+let appData = {
+  mom:0, dad:0, skin:0,
+  hair:0, hair_color:0,
+  beard:0, beard_color:0,
+  brows:0, brows_color:0,
+
+  eyeliner:0, eyeliner_color:0,      // ✅
+  eyeshadow:0, eyeshadow_color:0,    // ✅
+
+  top:0, legs:0, shoes:0, eyes:0,
+  face: new Array(20).fill(0)
+};
+function applyGenderUI() {
+  const isMale = (gender === "ERKEK");
+
+  const rowBeard = document.getElementById("rowBeard");
+  const rowBeardClr = document.getElementById("rowBeardClr");
+
+  if (rowBeard) rowBeard.style.display = isMale ? "flex" : "none";
+  if (rowBeardClr) rowBeardClr.style.display = isMale ? "block" : "none";
+
+  // Kadınsa sakalı sıfırla + client'a gönderme
+if (!isMale) {
+  // Kaş rengini saç rengine eşitle (opsiyonel)
+  appData.brows_color = appData.hair_color || 0;
+  const browRange = document.getElementById("brows-color-range");
+  if (browRange) browRange.value = appData.brows_color;
+  mp.trigger("client:char:updateFeature", "brows_color", appData.brows_color);
+}
+}
+    function stopProp(e) { e.stopPropagation(); }
+    document.querySelectorAll('input[type="text"]').forEach(i => i.addEventListener('input', e => e.target.value = e.target.value.replace(/[^a-zA-Z ]/g, '')));
+
+ function setGender(g) {
+    gender = g;
+    document.getElementById('m-btn').className = g === 'ERKEK' ? 'gender-btn active' : 'gender-btn';
+    document.getElementById('f-btn').className = g === 'KADIN' ? 'gender-btn active' : 'gender-btn';
+
+    applyGenderUI(); // ✅ sakal gizle/aç + sıfırla
+
+    mp.trigger('client:char:setGender', g);
+}
+
+    function updateAge(v) { document.getElementById('age-val').innerText = v; }
+
+    function updateHeritage(t, v) {
+        appData[t] = parseInt(v);
+        document.getElementById(t+'-val').innerText = v;
+        mp.trigger('client:char:setHeritage', appData.mom, appData.dad, appData.skin);
+    }
+
+    // Butonla değişenler (+1 / -1)
+    function updStyle(t, d) {
+        appData[t] += d; if(appData[t] < 0) appData[t] = 0;
+        document.getElementById(t+'-id').innerText = appData[t];
+        mp.trigger('client:char:updateFeature', t, appData[t]);
+    }
+
+    // Slider ile direkt atananlar (Renkler)
+    function setDirectStyle(t, v) {
+        appData[t] = parseInt(v);
+        mp.trigger('client:char:updateFeature', t, appData[t]);
+    }
+
+    function updFace(idx, val) {
+        appData.face[idx] = parseFloat(val);
+        mp.trigger('client:char:setFaceFeature', idx, val);
+    }
+
+    function openFaceMenu() {
+        document.getElementById('main-style-menu').style.display = 'none';
+        document.getElementById('face-menu').style.display = 'block';
+        setCam('head');
+    }
+
+    function closeFaceMenu() {
+        document.getElementById('face-menu').style.display = 'none';
+        document.getElementById('main-style-menu').style.display = 'block';
+        setCam('body');
+    }
+
+    function setCam(t) { mp.trigger('client:char:setCamera', t); }
+	
+function unlockCreateButton() {
+  const btn = document.getElementById("finish-btn");
+  if (btn) btn.disabled = false;
+}
+
+// Uyarıyı gösteren ve kapatan yeni fonksiyonlar
+function showAlert(msg) {
+    const alertMsg = document.getElementById('alert-msg');
+    if (alertMsg) {
+        // Eğer msg boş gelirse varsayılan bir yazı yazdıralım
+        alertMsg.innerText = msg ? msg : "Bir hata oluştu!"; 
+    }
+    document.getElementById('custom-alert').style.display = 'flex';
+}
+
+function closeAlert() {
+    document.getElementById('custom-alert').style.display = 'none';
+}
+
+function finish() {
+    const btn = document.getElementById("finish-btn");
+    
+    try {
+        const nameInput = document.getElementById('c-name');
+        const surnameInput = document.getElementById('c-surname');
+        
+        const nameVal = nameInput ? nameInput.value.trim() : "";
+        const surnameVal = surnameInput ? surnameInput.value.trim() : "";
+
+        // ARTIK ALERT YERİNE showAlert KULLANIYORUZ
+        if (nameVal.length < 2 || surnameVal.length < 2) {
+            showAlert("Karakter oluşturmak için geçerli bir İSİM ve SOYİSİM yazmalısınız!");
+            return; 
+        }
+
+        if (btn) btn.disabled = true;
+
+        const ageVal = document.getElementById('age-val').innerText;
+        const g = (typeof gender !== 'undefined') ? gender : "ERKEK";
+        const dataStr = (typeof appData !== 'undefined') ? JSON.stringify(appData) : "{}";
+
+        if (window.mp) {
+            mp.trigger('client:char:finish', nameVal, surnameVal, ageVal, g, dataStr);
+        }
+    } catch (err) {
+        if (btn) btn.disabled = false;
+        showAlert("Arayüz hatası oluştu: " + err.message);
+    }
+}
+	applyGenderUI();
+</script>
+
+
+
+<div id="custom-alert" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#1a1a1a; border:2px solid #ff9d00; padding:30px; border-radius:15px; text-align:center; width:350px; box-shadow:0 0 30px rgba(255,157,0,0.3);">
+        <h2 style="color:#ff9d00; margin-top:0;">DİKKAT!</h2>
+        <p id="alert-msg" style="color:white; font-size:18px; margin:20px 0;">Lütfen geçerli bir isim girin.</p>
+        <button onclick="closeAlert()" style="background:#ff9d00; color:black; border:none; padding:10px 30px; font-weight:900; border-radius:5px; cursor:pointer; text-transform:uppercase;">TAMAM</button>
+    </div>
+</div>
+
+</body>
+</html>

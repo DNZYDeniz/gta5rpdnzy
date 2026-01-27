@@ -1,0 +1,14 @@
+<meta>
+  <info name="DNZY Map Assets" author="DNZY" version="1.0" />
+  
+  <files>
+    <file>stream/dnzydekor.ytyp</file>
+  </files>
+
+  <map>
+    <item type="CMapData">
+      <name>dnzy_map</name>
+      <file>stream/dnzydekor.ymap</file>
+    </item>
+  </map>
+</meta>

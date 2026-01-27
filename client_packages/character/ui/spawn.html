@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="spawn.css">
+</head>
+<body>
+    <div id="spawn-app">
+        <h1 class="main-header">BAŞLANGIÇ NOKTASI SEÇ</h1>
+        
+        <div class="spawn-container">
+            <div class="spawn-card" onclick="selectSpawn(0)">
+                <div class="image-box">
+                    <img src="images/hotel.jpg">
+                    <div class="card-title">OTEL</div>
+                </div>
+                <div class="info">
+                    <span class="status active">MÜSAİT</span>
+                </div>
+            </div>
+
+            <div id="btn-home" class="spawn-card locked" onclick="selectSpawn(1)">
+                <div class="image-box">
+                    <img src="images/home.jpg">
+                    <div class="card-title">EV</div>
+                </div>
+                <div class="info">
+                    <span class="status">YOK</span>
+                </div>
+            </div>
+
+            <div id="btn-family" class="spawn-card locked" onclick="selectSpawn(2)">
+                <div class="image-box">
+                    <img src="images/family.jpg">
+                    <div class="card-title">AİLE EVİ</div>
+                </div>
+                <div class="info">
+                    <span class="status">YOK</span>
+                </div>
+            </div>
+
+            <div class="spawn-card" onclick="selectSpawn(3)">
+                <div class="image-box">
+                    <img src="images/airport.jpg">
+                    <div class="card-title">HAVALİMANI</div>
+                </div>
+                <div class="info">
+                    <span class="status active">VARSAYILAN</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p>İlk defa kayıt olduysanız <span>Otel</span>'de başlamanız tavsiye edilir.</p>
+            <p class="small">Ev aldıktan veya herhangi bir aileye girdiğinizde oyuna tekrar girdiğinizde diğer seçenekler aktif olacaktır.</p>
+        </div>
+    </div>
+
+    <script>
+        function setOptions(hasHouse, hasFamily) {
+            if(hasHouse) {
+                const btn = document.getElementById('btn-home');
+                if(btn) {
+                    btn.classList.remove('locked');
+                    btn.querySelector('.status').innerText = "MÜSAİT";
+                    btn.querySelector('.status').classList.add('active');
+                }
+            }
+            if(hasFamily) {
+                const btn = document.getElementById('btn-family');
+                if(btn) {
+                    btn.classList.remove('locked');
+                    btn.querySelector('.status').innerText = "MÜSAİT";
+                    btn.querySelector('.status').classList.add('active');
+                }
+            }
+        }
+
+        function selectSpawn(type) {
+            const card = event.currentTarget;
+            if(card.classList.contains('locked')) return;
+            if (window.mp) mp.trigger("client:character:selectSpawn", type);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+/* DOSYA: client_packages/advanced-chat/styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700;900&display=swap');
+
+body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+    font-family: 'Roboto', sans-serif; user-select: none;
+}
+.chat-wrapper { position: absolute; top: 20px; left: 20px; width: 600px; }
+
+/* Mesaj Listesi - Daha Okunaklı */
+.message-list {
+    height: 350px; 
+    overflow-y: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: flex-end;
+    /* Yazı gölgesi arttırıldı */
+    text-shadow: 2px 2px 0px black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+    mask-image: linear-gradient(to bottom, transparent, black 15%);
+}
+
+.msg-item { 
+    padding: 3px 8px; 
+    color: white; 
+    font-size: 16px; 
+    font-weight: 900; /* Çok Kalın */
+    line-height: 1.5; 
+    letter-spacing: 0.5px;
+}
+
+/* Kanal Tabları */
+.channel-tabs {
+    display: flex; gap: 5px; margin-bottom: 5px; margin-left: 5px;
+    transition: opacity 0.2s;
+}
+.tab {
+    background: rgba(0,0,0,0.8);
+    color: #aaa;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.tab.active {
+    background: #ffd54a; /* Sarı Aktif Renk */
+    color: black;
+    border-color: #ffd54a;
+    font-weight: bold;
+}
+
+/* Giriş Kutusu - Daha Koyu */
+.input-area {
+    margin-top: 5px; 
+    opacity: 0; 
+    transition: opacity 0.2s;
+    background: rgba(0, 0, 0, 0.90); /* Neredeyse tam siyah */
+    border-radius: 5px;
+    border: 2px solid rgba(255, 255, 255, 0.1); 
+    display: flex; 
+    align-items: center;
+    padding-left: 10px;
+}
+
+/* --- İKONLAR --- */
+.icon-gc {
+    display: inline-block;
+    background-color: #FFD700; /* Altın Sarısı */
+    color: #000;
+    font-weight: 900;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 12px;
+    margin-right: 4px;
+    box-shadow: 0 0 5px #FFD700;
+    border: 1px solid #fff;
+}
+
+.icon-money {
+    display: inline-block;
+    color: #2ecc71; /* GTA Yeşili */
+    font-weight: 900;
+    font-size: 16px;
+    margin-right: 2px;
+    text-shadow: 0 0 2px black;
+}
+
+#channel-badge {
+    font-size: 11px;
+    font-weight: bold;
+    margin-right: 5px;
+    padding: 2px 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+
+
+
+input { width: 100%; background: transparent; border: none; color: white; padding: 12px; font-size: 16px; font-weight: bold; outline: none; }
+#char-counter { color: #888; font-size: 12px; padding-right: 10px; }

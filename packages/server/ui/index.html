@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>DNZY RP - Giriş</title>
+  <style>
+    :root {
+      --accent: #ffd54a;
+      --card-bg: rgba(10, 10, 10, 0.8); /* Hafif şeffaf ki arkadaki canlı kamera görünsün */
+      --text: #ffffff;
+      /* 2 Kat Büyütme Çarpanı */
+      --scale: 1.8; 
+    }
+
+    body, html { 
+      margin: 0; padding: 0; width: 100%; height: 100%; 
+      overflow: hidden; background: transparent; /* Arka plan şeffaf olmalı */
+    }
+
+    .main-container {
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
+    }
+
+    /* Giriş Paneli - 2 Kat Büyük */
+    .glass-card {
+      background: var(--card-bg);
+      width: calc(400px * var(--scale));
+      padding: calc(40px * var(--scale));
+      border-radius: calc(20px * var(--scale));
+      border: 2px solid rgba(255,255,255,0.1);
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      font-size: calc(50px * var(--scale));
+      font-weight: 900; color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .inp-group { margin-bottom: calc(20px * var(--scale)); text-align: left; }
+    
+    label { 
+      font-size: calc(12px * var(--scale)); 
+      display: block; margin-bottom: 10px; color: #aaa; 
+    }
+
+    .inp {
+      width: 100%;
+      padding: calc(15px * var(--scale));
+      font-size: calc(14px * var(--scale));
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 10px;
+    }
+
+    .btn-main {
+      width: 100%;
+      padding: calc(15px * var(--scale));
+      font-size: calc(16px * var(--scale));
+      font-weight: bold;
+      background: var(--accent);
+      border: none; border-radius: 10px;
+      cursor: pointer; transition: 0.3s;
+    }
+
+    .btn-main:hover { transform: scale(1.05); filter: brightness(1.1); }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="glass-card">
+      <div class="logo">DNZY RP</div>
+      
+      <div class="inp-group">
+        <label>E-POSTA</label>
+        <input type="email" id="in_email" class="inp" placeholder="mail@dnzy.com">
+      </div>
+
+      <div class="inp-group">
+        <label>ŞİFRE</label>
+        <input type="password" id="in_pass" class="inp" placeholder="••••••••">
+      </div>
+
+      <button class="btn-main" onclick="sendAuth()">BAŞLA</button>
+    </div>
+  </div>
+
+  <script>
+    function sendAuth() {
+        const email = document.getElementById('in_email').value;
+        const pass = document.getElementById('in_pass').value;
+        if('mp' in window) mp.trigger('client:auth:submit', email, pass);
+    }
+  </script>
+</body>
+</html>	
