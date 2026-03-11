@@ -174,6 +174,8 @@ local function applyGizmoInputOwnership()
     enableGizmoCursor()
     state.cursorVisible = true
     sendUi('cef:setCursorVisible', true)
+    sendUi('cef:setWorldCursor', false, 0.5, 0.5)
+    SetMouseCursorActiveThisFrame()
     logInputOwnership('gizmo', false, false, false, state.gizmoCursorNative)
 end
 
@@ -193,7 +195,12 @@ local function maintainGizmoCursor()
 
     if not state.gizmoCursorNative then
         enableGizmoCursor()
+    else
+        pcall(function()
+            EnterCursorMode()
+        end)
     end
+    SetMouseCursorActiveThisFrame()
 end
 
 local function decodeJson(payload, fallback)
@@ -1033,12 +1040,7 @@ local function setEditorMode(mode)
     else
         ensureExternalCamera()
         state.gizmoCameraMove = false
-        state.cursorVisible = true
-
-        -- KRİTİK: gizmo modunda NUI focus AÇIK OLMAYACAK
-        applyNuiFocus(false, false, false)
-
-        enableGizmoCursor()
+        applyGizmoInputOwnership()
         focusExternalCameraOnSelection(true)
     end
 
@@ -1279,19 +1281,11 @@ if state.gizmoCameraMove then
     return
 end
 
-maintainGizmoCursor()
+    maintainGizmoCursor()
+    state.cursorVisible = true
+    sendUi('cef:setCursorVisible', true)
+    SetMouseCursorActiveThisFrame()
 
-    DisableControlAction(0, 1, true)
-    DisableControlAction(0, 2, true)
-    DisableControlAction(1, 1, true)
-    DisableControlAction(1, 2, true)
-    DisableControlAction(2, 1, true)
-    DisableControlAction(2, 2, true)
-    DisableControlAction(0, 24, true)
-    DisableControlAction(0, 25, true)
-    DisableControlAction(0, 140, true)
-    DisableControlAction(0, 141, true)
-    DisableControlAction(0, 142, true)
     DisableControlAction(0, KEY_FORWARD, true)
     DisableControlAction(0, KEY_BACK, true)
     DisableControlAction(0, KEY_LEFT, true)
