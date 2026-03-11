@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arderu Map Builder</title>
+    <style>
+        :root {
+            --bg-main: rgba(12, 12, 15, 0.98);
+            --bg-nav: rgba(8, 8, 10, 1);
+            --bg-card: rgba(18, 18, 22, 0.98);
+            --bg-item: rgba(25, 25, 30, 0.98);
+            --line: rgba(255, 152, 0, 0.25);
+            --line-strong: rgba(255, 152, 0, 0.9);
+            --text-main: #f5f5f5;
+            --text-muted: #999999;
+            --accent: #ff9800;
+            --accent-hover: #ffb300;
+            --danger: #ff3b3b;
+            --success: #00e676;
+            --ui-height: 40px;
+        }
+
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            color: var(--text-main);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        body.ui-hidden .editor-ui,
+        body.ui-hidden .controls-bottom-bar,
+        body.ui-hidden #right-panel,
+        body.ui-hidden #object-edit-panel,
+        body.ui-hidden #placement-helper,
+        body.ui-hidden #freecam-guide,
+        body.ui-hidden #gizmo-guide,
+        body.ui-hidden #builder-toast,
+        body.ui-hidden #center-warning,
+        body.ui-hidden .modal,
+        body.ui-hidden #world-cursor {
+            display: none !important;
+        }
+
+        body.gizmo-mode .editor-ui,
+        body.gizmo-mode .controls-bottom-bar,
+        body.gizmo-mode #right-panel,
+        body.gizmo-mode #object-edit-panel,
+        body.gizmo-mode #placement-helper,
+        body.gizmo-mode #center-warning {
+            display: none !important;
+        }
+
+        body.gizmo-mode .sticky,
+        body.gizmo-mode .edit-panel {
+            display: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+
+        body.placement-mode #right-panel,
+        body.placement-mode #object-edit-panel,
+        body.placement-mode #freecam-guide,
+        body.placement-mode #gizmo-guide,
+        body.placement-mode #center-warning {
+            display: none !important;
+        }
+
+        #world-cursor {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 13000;
+            display: none !important;
+        }
+
+        #world-cursor::before,
+        #world-cursor::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+        }
+
+        #world-cursor::before {
+            width: 18px;
+            height: 2px;
+        }
+
+        #world-cursor::after {
+            width: 2px;
+            height: 18px;
+        }
+
+        #world-cursor .world-cursor-dot {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+            border: 1px solid rgba(255, 255, 255, 0.95);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.45);
+        }
+
+        .editor-ui {
+            background: var(--bg-nav);
+            border-bottom: 3px solid var(--accent);
+            padding: 10px 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        .brand-stack {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            min-width: 290px;
+        }
+
+        .dnzy-brand-main {
+            color: var(--accent);
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .mode-banner {
+            color: #fff;
+            font-size: 21px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            text-shadow: 0 0 16px rgba(255, 152, 0, 0.4);
+            line-height: 1;
+        }
+
+        .editor-nav {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .btn-builder,
+        .custom-model-badge,
+        .bottom-actions .btn,
+        .btn-row {
+            border: none;
+            cursor: pointer;
+            font-weight: 900;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .btn-builder,
+        .custom-model-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: var(--ui-height);
+            padding: 0 14px;
+            border: 2px solid var(--line);
+            background: rgba(20, 20, 24, 0.9);
+            color: var(--text-main);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .icon {
+            width: 14px;
+            height: 14px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .icon-only {
+            margin-right: 0;
+        }
+
+        .icon-svg {
+            width: 14px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+        }
+
+        .icon-svg svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .icon-svg.fill svg {
+            fill: currentColor;
+            stroke: none;
+        }
+
+        .icon-svg.icon-only {
+            margin-right: 0;
+        }
+
+        .btn-builder:hover,
+        .custom-model-badge:hover {
+            border-color: var(--accent);
+            background: rgba(35, 35, 40, 0.95);
+        }
+
+        .btn-accent { background: rgba(20, 20, 24, 0.9); color: var(--text-main); border-color: var(--line); }
+        .btn-danger-soft { background: #b51f2f; color: #fff; border-color: #d83a4b; }
+
+        .custom-model-badge #custom-model-count { color: var(--accent); margin-left: 6px; }
+
+        .controls-bottom-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 8px 20px;
+            background: rgba(8, 8, 10, 0.98);
+            border-top: 3px solid var(--accent);
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.8);
+            pointer-events: auto;
+        }
+
+        .controls-title {
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .controls-list {
+            display: flex;
+            gap: 12px;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 800;
+        }
+
+        .controls-list b {
+            background: var(--accent);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-size: 11px;
+        }
+
+        .center-warning {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid var(--danger);
+            color: var(--danger);
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10000;
+            text-align: center;
+        }
+
+        .center-warning.show { opacity: 1; }
+
+        .sticky {
+            position: fixed;
+            top: 85px;
+            right: 20px;
+            bottom: 55px;
+            width: 450px;
+            max-height: calc(100vh - 140px);
+            padding: 20px 16px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--accent);
+            background: var(--bg-card);
+            box-shadow: -5px 10px 40px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            z-index: 900;
+            pointer-events: auto;
+        }
+
+        .placement-helper {
+            position: fixed;
+            left: 20px;
+            top: 88px;
+            width: 280px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            border: 2px solid var(--accent);
+            background: rgba(10, 12, 18, 0.92);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+            display: none;
+            z-index: 910;
+            pointer-events: auto;
+        }
+
+        .placement-helper h4 {
+            margin: 0 0 10px;
+            color: var(--accent);
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .placement-helper p {
+            margin: 0 0 8px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .floating-guide {
+            position: fixed;
+            width: 340px;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 152, 0, 0.45);
+            background: rgba(10, 12, 18, 0.94);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+            display: none;
+            z-index: 1050;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .floating-guide::before {
+            display: none;
+        }
+
+        .floating-guide > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .floating-guide-title {
+            margin: 0 0 6px;
+            color: var(--accent);
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+        }
+
+        .floating-guide-model {
+            margin: 0 0 12px;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .floating-guide-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 8px;
+        }
+
+        .floating-guide-list li {
+            color: #f5f5f5;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.15px;
+        }
+
+        .floating-guide-list b {
+            display: inline-block;
+            min-width: 66px;
+            margin-right: 8px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(255, 152, 0, 0.14);
+            border: 1px solid rgba(255, 152, 0, 0.32);
+            color: var(--accent);
+            text-align: center;
+        }
+
+        .floating-guide-emphasis {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 152, 0, 0.2);
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.45;
+        }
+
+        #freecam-guide {
+            top: 94px;
+            left: 24px;
+        }
+
+        #gizmo-guide {
+            top: 40px;
+            right: 28px;
+        }
+
+        .edit-panel {
+            position: fixed;
+            top: 85px;
+            right: 20px;
+            bottom: 55px;
+            width: 360px;
+            padding: 18px 16px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--accent);
+            background: var(--bg-card);
+            box-shadow: 5px 10px 40px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            z-index: 900;
+            pointer-events: auto;
+        }
+
+        .edit-panel h3 {
+            font-size: 20px;
+            margin: 0 0 12px;
+            color: var(--accent);
+            font-weight: 900;
+            text-transform: uppercase;
+            border-bottom: 2px solid rgba(255, 152, 0, 0.3);
+            padding-bottom: 8px;
+        }
+
+        .edit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .edit-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .edit-field label,
+        .edit-meta-row label {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .edit-meta-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .edit-meta-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 152, 0, 0.15);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .edit-meta-card strong {
+            display: block;
+            font-size: 13px;
+        }
+
+        .edit-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0 14px;
+            font-weight: 800;
+        }
+
+        .edit-transform-section {
+            margin-top: 10px;
+            border-top: 2px solid rgba(255, 152, 0, 0.2);
+            padding-top: 12px;
+        }
+
+        .edit-transform-section h4 {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .transform-group {
+            margin-bottom: 12px;
+        }
+
+        .transform-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .transform-buttons button {
+            height: 34px;
+            background: rgba(255, 152, 0, 0.12);
+            border: 1px solid rgba(255, 152, 0, 0.35);
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .transform-buttons button:hover {
+            background: rgba(255, 152, 0, 0.24);
+        }
+
+        .list-close-btn {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--danger);
+            color: #fff;
+            border: 2px solid #000;
+        }
+
+        .default-list-title {
+            font-size: 22px;
+            margin: 5px 0 15px;
+            color: var(--accent);
+            font-weight: 900;
+            text-transform: uppercase;
+            border-bottom: 2px solid rgba(255, 152, 0, 0.3);
+            padding-bottom: 8px;
+            text-align: center;
+        }
+
+        .search-input,
+        .form-control,
+        .modal select {
+            width: 100%;
+            background: rgba(10, 10, 12, 0.95);
+            border: 2px solid var(--line);
+            color: #fff;
+            font-weight: 800;
+            border-radius: 6px;
+            padding: 10px;
+            outline: none;
+            min-width: 0;
+        }
+
+        .form-control:focus,
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.15);
+        }
+
+        .selector-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 12px 0;
+            padding-right: 5px;
+        }
+
+        .builder-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-item);
+            border: 2px solid rgba(255, 152, 0, 0.1);
+            padding: 10px 14px;
+            min-height: 44px;
+            transition: all 0.15s ease;
+        }
+
+        .builder-list-item:hover { border-color: var(--accent); background: rgba(255, 152, 0, 0.1); }
+        .builder-list-item.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        .item-name { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; }
+        .item-actions { display: flex; gap: 5px; }
+
+        .btn-row {
+            height: 26px;
+            padding: 4px 10px;
+            font-size: 11px;
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-git { background: #2196f3; }
+        .btn-obj { background: #9c27b0; }
+        .btn-fav { background: transparent; color: #8b8b8b; padding: 4px; }
+        .btn-fav.active { color: #ffcf47; }
+        .btn-cat { background: transparent; color: #4caf50; padding: 4px; }
+
+        .btn-fav .icon-svg svg,
+        .btn-cat .icon-svg svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .panel-pagination {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .page-indicator { min-width: 84px; text-align: center; font-weight: 900; }
+
+        .bottom-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            border-top: 2px solid rgba(255, 152, 0, 0.3);
+            padding-top: 15px;
+            margin-top: auto;
+        }
+
+        .bottom-actions .btn {
+            flex: 1 1 calc(33.333% - 8px);
+            height: var(--ui-height);
+            padding: 0 12px;
+        }
+
+        .btn-sil { background: var(--danger); color: #fff; }
+        .btn-isim { background: #2196f3; color: #fff; }
+        .btn-ac { background: var(--success); color: #000; }
+        .btn-kapat { background: var(--danger); color: #fff; }
+        .btn-ekle { background: var(--accent); color: #000; }
+        .btn-gir { background: #4caf50; color: #fff; }
+        .btn-yerlestir { background: var(--accent); color: #000; flex: 1 1 100%; font-size: 14px; }
+
+        .builder-toast {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            min-width: 320px;
+            max-width: 620px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 2px solid var(--line);
+            background: rgba(15, 15, 18, 0.98);
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.3s;
+            z-index: 9999;
+            text-align: left;
+            top: 74px;
+            left: 20px;
+            min-width: 300px;
+            max-width: 460px;
+        }
+
+        .builder-toast.success { border-color: var(--success); color: var(--success); }
+        .builder-toast.error { border-color: var(--danger); color: var(--danger); }
+        .builder-toast.info { border-color: var(--accent); color: var(--accent); }
+        .builder-toast.show { opacity: 1; transform: translateY(0); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            background: rgba(10, 12, 18, 0.78);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        .modal.show { display: flex; }
+        .modal-dialog { width: 100%; max-width: 520px; margin: 0 auto; }
+        .modal-content { background: var(--bg-card); border: 3px solid var(--accent); border-radius: 8px; }
+        .modal-header, .modal-footer {
+            padding: 14px 18px;
+            border-bottom: 2px solid rgba(255, 152, 0, 0.2);
+        }
+        .modal-footer { border-top: 2px solid rgba(255, 152, 0, 0.2); border-bottom: none; }
+        .modal-body { padding: 18px; }
+        .modal-title { color: var(--accent); font-weight: 900; text-transform: uppercase; }
+        .modal-footer .btn {
+            height: var(--ui-height);
+            padding: 0 20px;
+            margin-left: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .modal-footer .btn-primary, .modal-footer .btn-success, .modal-footer .btn-danger {
+            background: var(--accent);
+            color: #000;
+        }
+    </style>
+</head>
+<body class="ui-hidden panel-mode">
+    <div id="world-cursor"><div class="world-cursor-dot"></div></div>
+    <nav class="editor-ui">
+        <div class="brand-stack">
+            <span class="dnzy-brand-main">ARDERU MAP BUILDER</span>
+            <span id="mode-banner" class="mode-banner">OBJE SEC</span>
+        </div>
+        <ul class="editor-nav">
+            <li><button type="button" onclick="UI.openCreateMapDialog()" class="btn-builder"><span id="icon-new"></span>Yeni</button></li>
+            <li><button type="button" onclick="UI.openList('maps')" class="btn-builder"><span id="icon-maps"></span>Haritalar</button></li>
+            <li><button type="button" onclick="UI.saveCurrentMap()" class="btn-builder"><span id="icon-save"></span>Kaydet</button></li>
+            <li><button type="button" onclick="UI.openList('objects')" class="btn-builder"><span id="icon-objects"></span>Obje Listesi</button></li>
+            <li><button type="button" onclick="UI.openList('favorites')" class="btn-builder btn-accent"><span id="icon-favorites"></span>Favoriler</button></li>
+            <li><button type="button" onclick="UI.openList('categories')" class="btn-builder"><span id="icon-categories"></span>Kategoriler</button></li>
+            <li><button type="button" onclick="$('#dialog-add-model').modal('show')" class="btn-builder btn-accent"><span id="icon-model"></span>Model</button></li>
+            <li><button type="button" onclick="UI.openList('activeObjects')" class="custom-model-badge"><span id="icon-active"></span>Aktif Objeler</button></li>
+            <li><button type="button" onclick="UI.openList('customModels')" class="custom-model-badge"><span id="icon-custom"></span>Custom: <span id="custom-model-count">0</span></button></li>
+            <li><span id="selected-map-badge" class="custom-model-badge"><span id="icon-selected-map"></span>Harita Secilmedi</span></li>
+            <li><button type="button" onclick="$('#dialog-exit-editor').modal('show')" class="btn-builder btn-danger-soft">KAPAT</button></li>
+        </ul>
+    </nav>
+
+    <div id="center-warning" class="center-warning">Once yeni bir harita olusturun</div>
+
+    <div id="freecam-guide" class="floating-guide">
+        <h4 class="floating-guide-title">Free Cam Editing</h4>
+        <p id="freecam-guide-model" class="floating-guide-model">MODEL: OBJE SECILMEDI</p>
+        <ul class="floating-guide-list">
+            <li><b>W A S D</b> Harici kamerayi hareket ettir</li>
+            <li><b>Q / E</b> Harici kamera yuksekligi</li>
+            <li><b>SHIFT</b> Hizli dolas</li>
+            <li><b>LEFT ALT</b> Objeyi zemine yapistir</li>
+            <li><b>C</b> Secili objeyi kopyala</li>
+            <li><b>F2</b> Gizmo duzenlemeye geri don</li>
+        </ul>
+        <div class="floating-guide-emphasis">Karakter yerinde kalir. Sadece harici kamera hareket eder.</div>
+    </div>
+
+    <div id="gizmo-guide" class="floating-guide">
+        <h4 class="floating-guide-title">Gizmo Editing</h4>
+        <p id="gizmo-guide-model" class="floating-guide-model">MODEL: OBJE SECILMEDI</p>
+        <ul class="floating-guide-list">
+            <li><b>SOL TIK</b> Objeyi sec veya gizmo eksenini tut</li>
+            <li><b>W / R</b> Translate ve rotate modlari</li>
+            <li><b>Q</b> Relative / World gecisi</li>
+            <li><b>LEFT ALT</b> Objeyi zemine yapistir</li>
+            <li><b>C</b> Secili objeyi kopyala</li>
+            <li><b>F2</b> Harici kamera kontrolunu ac/kapat</li>
+            <li><b>ENTER</b> Duzenlemeyi bitir ve panele don</li>
+        </ul>
+        <div class="floating-guide-emphasis">Gizmo modunda panel gizlenir. Ana panele donus sadece Enter ile olur.</div>
+    </div>
+
+    <div id="placement-helper" class="placement-helper">
+        <h4>Yerlestirme Modu</h4>
+        <p id="placement-helper-model">Model</p>
+        <p><strong>Mouse</strong> = gorunur cursor ile axis sec</p>
+        <p><strong>W / R</strong> = translate / rotate modu</p>
+        <p><strong>Q</strong> = local / world gecisi</p>
+        <p><strong>Mouse Sol Tik</strong> = gizmo ekseni tut</p>
+        <p><strong>F2</strong> = harici kamera kontrolu ac/kapat</p>
+        <p><strong>Backspace</strong> = iptal</p>
+        <p><strong>Enter</strong> = duzenlemeyi bitir ve panele don</p>
+    </div>
+
+    <div id="right-panel" class="sticky">
+        <button class="list-close-btn" onclick="UI.closeList()"><span id="icon-panel-close"></span></button>
+        <h3 id="panel-title" class="default-list-title">Liste</h3>
+        <input type="text" id="panel-search" class="search-input" placeholder="Ara..." onkeyup="UI.handleSearch()">
+        <div id="panel-list" class="selector-list"></div>
+        <div id="panel-pagination" class="panel-pagination">
+            <button id="panel-prev-page" type="button" class="btn-builder">Onceki</button>
+            <span id="panel-page-indicator" class="page-indicator">1 / 1</span>
+            <button id="panel-next-page" type="button" class="btn-builder">Sonraki</button>
+        </div>
+        <div id="panel-actions" class="bottom-actions"></div>
+    </div>
+
+    <div id="object-edit-panel" class="edit-panel">
+        <h3>Secili Obje</h3>
+        <div class="edit-field">
+            <label>Model</label>
+            <input id="selected-model-name" class="form-control" type="text" readonly>
+        </div>
+        <div class="edit-meta-row">
+            <div class="edit-meta-card">
+                <label>Boyut</label>
+                <strong id="selected-dimensions">0 x 0 x 0</strong>
+            </div>
+            <div class="edit-meta-card">
+                <label>Tip</label>
+                <strong id="selected-scope">Local Object</strong>
+            </div>
+        </div>
+        <div class="edit-toggle">
+            <input id="selected-collision" type="checkbox">
+            <label for="selected-collision">Collision enabled</label>
+        </div>
+        <div class="edit-grid">
+            <div class="edit-field"><label>Pos X</label><input id="selected-pos-x" class="form-control" type="number" step="0.01"></div>
+            <div class="edit-field"><label>Pos Y</label><input id="selected-pos-y" class="form-control" type="number" step="0.01"></div>
+            <div class="edit-field"><label>Pos Z</label><input id="selected-pos-z" class="form-control" type="number" step="0.01"></div>
+            <div class="edit-field"><label>Rot X</label><input id="selected-rot-x" class="form-control" type="number" step="0.1"></div>
+            <div class="edit-field"><label>Rot Y</label><input id="selected-rot-y" class="form-control" type="number" step="0.1"></div>
+            <div class="edit-field"><label>Rot Z</label><input id="selected-rot-z" class="form-control" type="number" step="0.1"></div>
+        </div>
+        <div class="bottom-actions" style="margin-top: 4px; padding-top: 0; border-top: none;">
+            <button type="button" class="btn btn-ekle" onclick="UI.applySelectedObjectEdits()">Apply Values</button>
+            <button type="button" class="btn btn-sil" onclick="UI.deleteSelectedObject()">Delete</button>
+        </div>
+    </div>
+
+    <div class="controls-bottom-bar">
+        <div class="controls-title">Kontroller</div>
+        <div id="controls-list" class="controls-list">
+            <span><b>F2</b> Gizmo Mode</span>
+            <span><b>Obje Listesi</b> Yeni obje sec</span>
+            <span><b>Haritalar</b> Mevcut haritayi ac</span>
+            <span><b>Kaydet</b> Haritayi sunucuya yaz</span>
+            <span><b>Mouse</b> Panel / liste kullanimi</span>
+            <span><b>Delete</b> Secili objeyi sil</span>
+        </div>
+    </div>
+
+    <div class="modal" id="dialog-add-model">
+        <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Ozel Model Ekle</h5></div>
+            <div class="modal-body"><form onsubmit="UI.addCustomModel(event)"><input type="text" class="form-control" id="custom-model-name" placeholder="Model adi" maxlength="80"></form></div>
+            <div class="modal-footer"><button type="button" class="btn" data-dismiss="modal">Iptal</button><button type="button" class="btn btn-primary" onclick="UI.addCustomModel(event)">Ekle</button></div>
+        </div></div>
+    </div>
+
+    <div class="modal" id="dialog-create-map">
+        <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Yeni Harita</h5></div>
+            <div class="modal-body"><input type="text" class="form-control" id="create-map-name" placeholder="Harita adi" maxlength="64"></div>
+            <div class="modal-footer"><button type="button" class="btn" data-dismiss="modal">Iptal</button><button type="button" class="btn btn-primary" onclick="UI.confirmCreateMap()">Olustur</button></div>
+        </div></div>
+    </div>
+
+    <div class="modal" id="dialog-add-category">
+        <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Yeni Kategori</h5></div>
+            <div class="modal-body"><input type="text" class="form-control" id="add-category-name" placeholder="Kategori adi" maxlength="64"></div>
+            <div class="modal-footer"><button type="button" class="btn" data-dismiss="modal">Iptal</button><button type="button" class="btn btn-primary" onclick="UI.confirmAddCategory()">Ekle</button></div>
+        </div></div>
+    </div>
+
+    <div class="modal" id="dialog-select-category">
+        <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Kategori Sec</h5></div>
+            <div class="modal-body"><select id="select-category-dropdown" class="form-control"></select></div>
+            <div class="modal-footer"><button type="button" class="btn" data-dismiss="modal">Iptal</button><button type="button" class="btn btn-primary" onclick="UI.confirmAssignCategory()">Onayla</button></div>
+        </div></div>
+    </div>
+
+    <div class="modal" id="dialog-rename">
+        <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Isim Degistir</h5></div>
+            <div class="modal-body"><input type="text" class="form-control" id="rename-input" placeholder="Yeni isim" maxlength="64"></div>
+            <div class="modal-footer"><button type="button" class="btn" data-dismiss="modal">Iptal</button><button type="button" class="btn btn-primary" onclick="UI.confirmRename()">Kaydet</button></div>
+        </div></div>
+    </div>
+
+    <div class="modal" id="dialog-exit-editor">
+        <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Cikis</h5></div>
+            <div class="modal-body"><p>Kaydedilmemis degisiklikler silinecek. Cikilsin mi?</p></div>
+            <div class="modal-footer"><button type="button" class="btn" data-dismiss="modal">Hayir</button><button type="button" class="btn btn-danger" onclick="UI.exitEditor()">Evet</button></div>
+        </div></div>
+    </div>
+
+    <div id="builder-toast" class="builder-toast info"><span id="builder-toast-text"></span></div>
+
+    <script>
+        (function initializeFivemBridge() {
+            const handlers = {};
+            const resourceName = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'arderumapbuilder';
+            const icons = {
+                file: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>',
+                folderOpen: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M3 7h5l2 2h11"/><path d="M3 7v10a2 2 0 0 0 2 2h12.5a2 2 0 0 0 1.9-1.4L21 10a2 2 0 0 0-1.9-2.6H3z"/></svg></span>',
+                save: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3"/><path d="M9 21v-7h6v7"/></svg></span>',
+                squareFull: '<span class="icon-svg fill"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></span>',
+                star: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="m12 3 2.9 5.9 6.6 1-4.8 4.7 1.1 6.7L12 18.2 6.2 21.3l1.1-6.7L2.5 9.9l6.6-1z"/></svg></span>',
+                starFill: '<span class="icon-svg fill"><svg viewBox="0 0 24 24"><path d="m12 3 2.9 5.9 6.6 1-4.8 4.7 1.1 6.7L12 18.2 6.2 21.3l1.1-6.7L2.5 9.9l6.6-1z"/></svg></span>',
+                rectangleList: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M8 7h11"/><path d="M8 12h11"/><path d="M8 17h11"/><path d="M4 7h.01"/><path d="M4 12h.01"/><path d="M4 17h.01"/></svg></span>',
+                squarePlus: '<span class="icon-svg"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg></span>',
+                objectGroup: '<span class="icon-svg"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="8" height="8" rx="1.5"/><rect x="12" y="4" width="8" height="8" rx="1.5"/><rect x="12" y="12" width="8" height="8" rx="1.5"/></svg></span>',
+                map: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/></svg></span>',
+                xmarkCircle: '<span class="icon-svg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6"/><path d="m15 9-6 6"/></svg></span>',
+                folder: '<span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M3 7h5l2 2h11v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>'
+            };
+            window.BuilderIcons = icons;
+
+            window.$ = function(selector) {
+                const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+                return {
+                    modal(command) {
+                        if (!el) return this;
+                        if (command === 'show') el.classList.add('show');
+                        if (command === 'hide') el.classList.remove('show');
+                        return this;
+                    }
+                };
+            };
+
+            window.mp = {
+                events: {
+                    add(name, callback) {
+                        handlers[name] = handlers[name] || [];
+                        handlers[name].push(callback);
+                    },
+                    call(name, ...args) {
+                        return fetch(`https://${resourceName}/invoke`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                            body: JSON.stringify({ name, args })
+                        }).catch(() => null);
+                    }
+                },
+                invoke() {
+                    return null;
+                }
+            };
+
+            function dispatch(eventName, args) {
+                const listeners = handlers[eventName] || [];
+                listeners.forEach((callback) => {
+                    try { callback(...args); } catch (error) { console.error(error); }
+                });
+            }
+
+            document.addEventListener('click', (event) => {
+                const dismiss = event.target.closest('[data-dismiss="modal"]');
+                if (!dismiss) return;
+                const modal = dismiss.closest('.modal');
+                if (modal) modal.classList.remove('show');
+            });
+
+            window.addEventListener('message', (event) => {
+                const payload = event.data || {};
+                if (payload.event === 'ui:setVisible') {
+                    const isVisible = payload.args[0] === true;
+                    document.body.classList.toggle('ui-hidden', !isVisible);
+                    if (!isVisible) {
+                        document.body.classList.remove('gizmo-mode', 'freecam-mode', 'panel-mode', 'placement-mode');
+                        document.querySelectorAll('.modal.show').forEach((modal) => modal.classList.remove('show'));
+                        const active = document.activeElement;
+                        if (active && typeof active.blur === 'function') active.blur();
+                        try { window.mp.events.call('client:builder:textInputFocus', false); } catch (_) { }
+                    }
+                    return;
+                }
+
+                if (payload.event) {
+                    dispatch(payload.event, Array.isArray(payload.args) ? payload.args : []);
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const map = {
+                    'icon-new': icons.file,
+                    'icon-maps': icons.folderOpen,
+                    'icon-save': icons.save,
+                    'icon-objects': icons.squareFull,
+                    'icon-favorites': icons.star,
+                    'icon-categories': icons.rectangleList,
+                    'icon-model': icons.squarePlus,
+                    'icon-active': icons.objectGroup,
+                    'icon-custom': icons.file,
+                    'icon-selected-map': icons.map,
+                    'icon-exit': icons.xmarkCircle,
+                    'icon-panel-close': icons.xmarkCircle
+                };
+
+                Object.keys(map).forEach((id) => {
+                    const node = document.getElementById(id);
+                    if (node) node.innerHTML = map[id];
+                });
+            });
+        })();
+    </script>
+    <script src="./objects.js"></script>
+    <script src="./panel.js"></script>
+</body>
+</html>
