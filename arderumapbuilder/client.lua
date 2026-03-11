@@ -32,6 +32,7 @@ local HIDDEN_HUD_COMPONENTS = { 1, 2, 3, 4, 6, 7, 8, 9, 13, 14, 15, 16, 17, 19, 
 
 local dataviewChunk = assert(load(LoadResourceFile(GetCurrentResourceName(), 'gizmo_dataview.lua'), '@gizmo_dataview.lua'))
 local dataview = dataviewChunk()
+local hasSelectedEntry
 
 local state = {
     editorOpen = false,
@@ -132,35 +133,33 @@ local function disableGizmoCursor()
     pcall(function()
         LeaveCursorMode()
     end)
-
     state.gizmoCursorNative = false
-    state.cursorVisible = false
     state.gizmoDragging = false
-    logCursorState('disableGizmoCursor')
+    print(('[arderumapbuilder] disableGizmoCursor mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
+        tostring(state.editorMode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
+    ))
 end
 
 local function enableGizmoCursor()
     state.gizmoCursorNative = false
-
     local ok = pcall(function()
         EnterCursorMode()
+        SetCursorLocation(0.5, 0.5)
     end)
-
     if ok then
-        pcall(function()
-            SetCursorLocation(0.5, 0.5)
-        end)
         state.gizmoCursorNative = true
     end
-
-    state.cursorVisible = true
-    logCursorState('enableGizmoCursor')
+    print(('[arderumapbuilder] enableGizmoCursor mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
+        tostring(state.editorMode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
+    ))
 end
 
 local function applyPanelInputOwnership()
     disableGizmoCursor()
     state.cursorVisible = true
     applyNuiFocus(true, true, false)
+    sendUi('cef:setCursorVisible', true)
+    sendUi('cef:setWorldCursor', false, 0.5, 0.5)
     logInputOwnership('panel', true, true, false, false)
 end
 
@@ -168,13 +167,16 @@ local function applyFreecamInputOwnership()
     disableGizmoCursor()
     state.cursorVisible = false
     applyNuiFocus(false, false, false)
+    sendUi('cef:setCursorVisible', false)
+    sendUi('cef:setWorldCursor', false, 0.5, 0.5)
     logInputOwnership('freecam', false, false, false, false)
 end
 
 local function applyGizmoInputOwnership()
+    applyNuiFocus(false, false, false)
     enableGizmoCursor()
     state.cursorVisible = true
-    applyNuiFocus(false, false, false)
+    sendUi('cef:setCursorVisible', true)
     logInputOwnership('gizmo', false, false, false, state.gizmoCursorNative)
 end
 
@@ -183,19 +185,20 @@ local function maintainGizmoCursor()
         state.editorOpen
         and state.editorMode == EDITOR_MODE_GIZMO
         and not state.gizmoCameraMove
-
+        and hasSelectedEntry()
+    print(('[arderumapbuilder] maintainGizmoCursor should=%s mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
+        tostring(shouldOwnCursor), tostring(state.editorMode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
+    ))
     if not shouldOwnCursor then
         if state.gizmoCursorNative then
             disableGizmoCursor()
         end
         return
     end
-
     if not state.gizmoCursorNative then
         enableGizmoCursor()
         return
     end
-
     pcall(function()
         EnterCursorMode()
     end)
@@ -726,7 +729,7 @@ local function getEntryDimensions(entry)
     }
 end
 
-local function hasSelectedEntry()
+hasSelectedEntry = function()
     local entry = state.selectedDraftId and state.draftById[state.selectedDraftId] or nil
     if not entry or not entry.entity or entry.entity == 0 or not DoesEntityExist(entry.entity) then
         return false
@@ -1014,28 +1017,34 @@ end
 local function setEditorMode(mode)
     state.editorMode = mode
     state.textInputFocused = false
-    state.gizmoDragging = false
     sendUi('cef:forceInputBlur')
-    logCursorState('mode_change')
-
+    print(('[arderumapbuilder] setEditorMode mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
+        tostring(mode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
+    ))
     if state.editorMode == EDITOR_MODE_PANEL then
+        disableGizmoCursor()
         destroyExternalCamera()
         state.gizmoCameraMove = false
-        applyPanelInputOwnership()
+        state.cursorVisible = true
+        applyNuiFocus(true, true, false)
     elseif state.editorMode == EDITOR_MODE_FREECAM then
+        disableGizmoCursor()
         ensureExternalCamera()
         state.gizmoCameraMove = true
         if state.externalCam and state.externalCam ~= 0 and DoesCamExist(state.externalCam) then
             SetCamFov(state.externalCam, 58.0)
         end
-        applyFreecamInputOwnership()
+        state.cursorVisible = false
+        applyNuiFocus(false, false, false)
     else
         ensureExternalCamera()
         state.gizmoCameraMove = false
-        applyGizmoInputOwnership()
+        state.cursorVisible = true
+        -- KRITIK: gizmoda NUI focus açılmayacak
+        applyNuiFocus(false, false, false)
+        enableGizmoCursor()
         focusExternalCameraOnSelection(true)
     end
-
     applyDraftFreezeState()
     sendUi('cef:setCursorVisible', state.cursorVisible)
     sendUi('cef:setWorldCursor', false, 0.5, 0.5)
@@ -1265,13 +1274,11 @@ local function processGizmo()
         if state.gizmoCursorNative then
             disableGizmoCursor()
         end
-        applyFreecamInputOwnership()
         updateExternalCameraMovement()
         return
     end
 
     maintainGizmoCursor()
-    applyNuiFocus(false, false, false)
 
     DisableControlAction(0, 1, true)
     DisableControlAction(0, 2, true)
@@ -1390,12 +1397,14 @@ local function closeEditor(notifyServer)
     end
 
     state.gizmoCameraMove = false
-    applyFreecamInputOwnership()
+    disableGizmoCursor()
+    applyNuiFocus(false, false, false)
+    state.cursorVisible = false
+    sendUi('cef:setCursorVisible', false)
+    sendUi('cef:setWorldCursor', false, 0.5, 0.5)
     destroyExternalCamera()
     setUiVisible(false)
     sendUi('cef:forceInputBlur')
-    sendUi('cef:setCursorVisible', false)
-    sendUi('cef:setWorldCursor', false, 0.5, 0.5)
 
     clearDraftObjects()
     clearPreviewObject()
@@ -2067,6 +2076,10 @@ CreateThread(function()
 
             if state.editorMode == EDITOR_MODE_PANEL then
                 applyNuiFocus(true, true, false)
+            end
+
+            if state.editorMode ~= EDITOR_MODE_GIZMO and state.gizmoCursorNative then
+                disableGizmoCursor()
             end
 
             if GetGameTimer() - state.lastIdleCamInvalidate > 500 then
