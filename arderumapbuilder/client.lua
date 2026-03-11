@@ -105,6 +105,17 @@ local function applyNuiFocus(hasFocus, hasCursor, keepInput)
     end
 end
 
+local function logInputOwnership(modeName, hasFocus, hasCursor, keepInput, nativeCursor)
+    print(('[%s] ownership=%s nuiFocus=%s cursor=%s keepInput=%s nativeCursor=%s'):format(
+        Shared.RESOURCE_NAME,
+        tostring(modeName),
+        tostring(hasFocus == true),
+        tostring(hasCursor == true),
+        tostring(keepInput == true),
+        tostring(nativeCursor == true)
+    ))
+end
+
 local function disableGizmoCursor()
     pcall(function()
         LeaveCursorMode()
@@ -126,6 +137,24 @@ local function enableGizmoCursor()
         end)
         state.gizmoCursorNative = true
     end
+end
+
+local function applyPanelInputOwnership()
+    disableGizmoCursor()
+    applyNuiFocus(true, true, false)
+    logInputOwnership('panel', true, true, false, false)
+end
+
+local function applyFreecamInputOwnership()
+    disableGizmoCursor()
+    applyNuiFocus(false, false, false)
+    logInputOwnership('freecam', false, false, false, false)
+end
+
+local function applyGizmoInputOwnership()
+    enableGizmoCursor()
+    applyNuiFocus(false, false, false)
+    logInputOwnership('gizmo', false, false, false, state.gizmoCursorNative)
 end
 
 local function maintainGizmoCursor()
@@ -952,26 +981,23 @@ local function setEditorMode(mode)
     sendUi('cef:forceInputBlur')
 
     if state.editorMode == EDITOR_MODE_PANEL then
-        disableGizmoCursor()
         destroyExternalCamera()
         state.gizmoCameraMove = false
         state.cursorVisible = true
-        applyNuiFocus(true, true, false)
+        applyPanelInputOwnership()
     elseif state.editorMode == EDITOR_MODE_FREECAM then
-        disableGizmoCursor()
         ensureExternalCamera()
         state.gizmoCameraMove = true
         if state.externalCam and state.externalCam ~= 0 and DoesCamExist(state.externalCam) then
             SetCamFov(state.externalCam, 58.0)
         end
         state.cursorVisible = false
-        applyNuiFocus(false, false, false)
+        applyFreecamInputOwnership()
     else
         ensureExternalCamera()
         state.gizmoCameraMove = false
-        enableGizmoCursor()
         state.cursorVisible = true
-        applyNuiFocus(true, true, true)
+        applyGizmoInputOwnership()
         focusExternalCameraOnSelection(true)
     end
 
@@ -1202,13 +1228,12 @@ local function processGizmo()
     state.textInputFocused = false
 
     if state.gizmoCameraMove then
-        disableGizmoCursor()
-        applyNuiFocus(false, false, false)
+        applyFreecamInputOwnership()
         updateExternalCameraMovement()
         return
     end
 
-    applyNuiFocus(true, true, true)
+    applyNuiFocus(false, false, false)
 
     DisableControlAction(0, 1, true)
     DisableControlAction(0, 2, true)
@@ -2055,8 +2080,7 @@ CreateThread(function()
                 elseif state.editorMode == EDITOR_MODE_GIZMO then
                     state.gizmoCameraMove = not state.gizmoCameraMove
                     if state.gizmoCameraMove then
-                        disableGizmoCursor()
-                        applyNuiFocus(false, false, false)
+                        applyFreecamInputOwnership()
                         if state.externalCam and state.externalCam ~= 0 and DoesCamExist(state.externalCam) then
                             SetCamFov(state.externalCam, 58.0)
                         end
@@ -2064,8 +2088,7 @@ CreateThread(function()
                         sendUi('cef:setCursorVisible', false)
                         sendUi('cef:notify', 'info', 'Harici kamera kontrolu acildi.')
                     else
-                        enableGizmoCursor()
-                        applyNuiFocus(true, true, true)
+                        applyGizmoInputOwnership()
                         if state.externalCam and state.externalCam ~= 0 and DoesCamExist(state.externalCam) then
                             SetCamFov(state.externalCam, 26.0)
                         end
@@ -2087,8 +2110,7 @@ CreateThread(function()
                 elseif state.editorMode == EDITOR_MODE_GIZMO then
                     if state.gizmoCameraMove then
                         state.gizmoCameraMove = false
-                        enableGizmoCursor()
-                        applyNuiFocus(true, true, true)
+                        applyGizmoInputOwnership()
                         if state.externalCam and state.externalCam ~= 0 and DoesCamExist(state.externalCam) then
                             SetCamFov(state.externalCam, 26.0)
                         end
