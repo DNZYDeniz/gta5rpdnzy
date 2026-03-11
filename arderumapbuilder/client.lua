@@ -133,25 +133,22 @@ local function disableGizmoCursor()
     pcall(function()
         LeaveCursorMode()
     end)
+
     state.gizmoCursorNative = false
     state.gizmoDragging = false
-    print(('[arderumapbuilder] disableGizmoCursor mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
-        tostring(state.editorMode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
-    ))
 end
 
 local function enableGizmoCursor()
     state.gizmoCursorNative = false
+
     local ok = pcall(function()
         EnterCursorMode()
         SetCursorLocation(0.5, 0.5)
     end)
+
     if ok then
         state.gizmoCursorNative = true
     end
-    print(('[arderumapbuilder] enableGizmoCursor mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
-        tostring(state.editorMode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
-    ))
 end
 
 local function applyPanelInputOwnership()
@@ -186,22 +183,17 @@ local function maintainGizmoCursor()
         and state.editorMode == EDITOR_MODE_GIZMO
         and not state.gizmoCameraMove
         and hasSelectedEntry()
-    print(('[arderumapbuilder] maintainGizmoCursor should=%s mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
-        tostring(shouldOwnCursor), tostring(state.editorMode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
-    ))
+
     if not shouldOwnCursor then
         if state.gizmoCursorNative then
             disableGizmoCursor()
         end
         return
     end
+
     if not state.gizmoCursorNative then
         enableGizmoCursor()
-        return
     end
-    pcall(function()
-        EnterCursorMode()
-    end)
 end
 
 local function decodeJson(payload, fallback)
@@ -1018,41 +1010,49 @@ local function setEditorMode(mode)
     state.editorMode = mode
     state.textInputFocused = false
     sendUi('cef:forceInputBlur')
-    print(('[arderumapbuilder] setEditorMode mode=%s nativeCursor=%s cursorVisible=%s camMove=%s'):format(
-        tostring(mode), tostring(state.gizmoCursorNative), tostring(state.cursorVisible), tostring(state.gizmoCameraMove)
-    ))
+
     if state.editorMode == EDITOR_MODE_PANEL then
         disableGizmoCursor()
         destroyExternalCamera()
         state.gizmoCameraMove = false
         state.cursorVisible = true
         applyNuiFocus(true, true, false)
+
     elseif state.editorMode == EDITOR_MODE_FREECAM then
         disableGizmoCursor()
         ensureExternalCamera()
         state.gizmoCameraMove = true
+
         if state.externalCam and state.externalCam ~= 0 and DoesCamExist(state.externalCam) then
             SetCamFov(state.externalCam, 58.0)
         end
+
         state.cursorVisible = false
         applyNuiFocus(false, false, false)
+
     else
         ensureExternalCamera()
         state.gizmoCameraMove = false
         state.cursorVisible = true
-        -- KRITIK: gizmoda NUI focus açılmayacak
+
+        -- KRİTİK: gizmo modunda NUI focus AÇIK OLMAYACAK
         applyNuiFocus(false, false, false)
+
         enableGizmoCursor()
         focusExternalCameraOnSelection(true)
     end
+
     applyDraftFreezeState()
+
     sendUi('cef:setCursorVisible', state.cursorVisible)
     sendUi('cef:setWorldCursor', false, 0.5, 0.5)
+
     if hasSelectedEntry() then
         syncSelectedObjectToUi(true)
     else
         clearSelectedObjectUi()
     end
+
     syncEditorModeToUi()
 end
 
@@ -1268,17 +1268,18 @@ local function processGizmo()
         return
     end
 
-    state.textInputFocused = false
+   state.textInputFocused = false
 
-    if state.gizmoCameraMove then
-        if state.gizmoCursorNative then
-            disableGizmoCursor()
-        end
-        updateExternalCameraMovement()
-        return
+if state.gizmoCameraMove then
+    if state.gizmoCursorNative then
+        disableGizmoCursor()
     end
 
-    maintainGizmoCursor()
+    updateExternalCameraMovement()
+    return
+end
+
+maintainGizmoCursor()
 
     DisableControlAction(0, 1, true)
     DisableControlAction(0, 2, true)
